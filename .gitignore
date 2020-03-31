@@ -1,0 +1,9 @@
+*.csv
+*.png
+*.pyc
+*.txt
+!requirements.txt
+__pycache__/
+/.idea
+/venv
+/env
