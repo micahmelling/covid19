@@ -2,6 +2,7 @@
 *.png
 *.pyc
 *.txt
+.DS_Store
 !requirements.txt
 __pycache__/
 /.idea
