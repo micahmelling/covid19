@@ -168,8 +168,10 @@ def calculate_stats(df, include_worldwide_analysis=True):
         worldwide_df.reset_index(inplace=True)
         worldwide_df['country_code'] = 'Worldwide'
         worldwide_df = _calculate_stats_helper(worldwide_df)
-        df = pd.concat([countries_df, worldwide_df])
-    return df
+        concat_df = pd.concat([countries_df, worldwide_df])
+        return concat_df
+    else:
+        return countries_df
 
 
 def make_time_series_plot(df, column, start_date, countries_list):
