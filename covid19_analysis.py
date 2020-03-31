@@ -29,7 +29,7 @@ DATA_DIRECTORY = 'data'
 
 COUNTRIES_TO_ANALYZE = ['USA', 'CAN']
 COLUMNS_TO_PLOT_TS = ['daily_percent_change_cases', 'daily_percent_change_deaths', 'cumulative_cases',
-                      'cumulative_deaths', 'cases', 'deaths']
+                      'cumulative_deaths', 'daily_cases', 'daily_deaths']
 COLUMNS_TO_MODEL_EXPONENTIAL = ['cumulative_cases']
 COLUMNS_TO_MODEL_POLYNOMIAL = ['cumulative_cases']
 
@@ -81,7 +81,8 @@ def get_data():
         df.to_csv(os.path.join(DATA_DIRECTORY, 'covid19_data_' + str(TODAY) + '.csv'), index=False)
     else:
         df = pd.read_csv(os.path.join(DATA_DIRECTORY, 'covid19_data_' + str(TODAY) + '.csv'), encoding='ISO-8859-1')
-    df.rename(columns={'countryterritoryCode': 'country_code'}, inplace=True)
+    df.rename(columns={'countryterritoryCode': 'country_code', 'cases': 'daily_cases', 'deaths': 'daily_deaths'},
+              inplace=True)
     return df
 
 
@@ -142,8 +143,8 @@ def _calculate_stats_helper(df):
     :param df: covid19_df defined in main()
     :return: pandas dataframe
     """
-    df['cumulative_cases'] = df.groupby(['country_code'])['cases'].apply(lambda x: x.cumsum())
-    df['cumulative_deaths'] = df.groupby(['country_code'])['deaths'].apply(lambda x: x.cumsum())
+    df['cumulative_cases'] = df.groupby(['country_code'])['daily_cases'].apply(lambda x: x.cumsum())
+    df['cumulative_deaths'] = df.groupby(['country_code'])['daily_deaths'].apply(lambda x: x.cumsum())
     df['death_rate'] = df['cumulative_deaths'] / df['cumulative_cases']
     df['daily_percent_change_cases'] = df['cumulative_cases'].pct_change()
     df['daily_percent_change_deaths'] = df['cumulative_deaths'].pct_change()
@@ -163,7 +164,7 @@ def calculate_stats(df, include_worldwide_analysis=True):
     countries_df = _subset_countries(df, countries_list=COUNTRIES_TO_ANALYZE)
     countries_df = _calculate_stats_helper(countries_df)
     if include_worldwide_analysis:
-        worldwide_df = df.groupby(['date']).agg({'cases': 'sum', 'deaths': 'sum'})
+        worldwide_df = df.groupby(['date']).agg({'daily_cases': 'sum', 'daily_deaths': 'sum'})
         worldwide_df.reset_index(inplace=True)
         worldwide_df['country_code'] = 'Worldwide'
         worldwide_df = _calculate_stats_helper(worldwide_df)
@@ -184,7 +185,7 @@ def make_time_series_plot(df, column, start_date, countries_list):
         sns.lineplot(x='date', y=column, hue='country_code', data=country_df)
         column_title = (column.replace('_', ' ')).title()
         plt.xlim(start_date, str(TODAY))
-        plt.title('Time Series Plot for ' + column_title)
+        plt.title(country + ' Time Series Plot for ' + column_title)
         plt.xticks(rotation=90)
         plt.legend(loc='upper right')
         plt.gcf().axes[0].yaxis.get_major_formatter().set_scientific(False)
