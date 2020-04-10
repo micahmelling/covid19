@@ -5,6 +5,7 @@ import re
 import os
 import shutil
 import glob
+import yagmail
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -32,6 +33,10 @@ COLUMNS_TO_PLOT_TS = ['daily_percent_change_cases', 'daily_percent_change_deaths
                       'cumulative_deaths', 'daily_cases', 'daily_deaths']
 COLUMNS_TO_MODEL_EXPONENTIAL = ['cumulative_cases']
 COLUMNS_TO_MODEL_POLYNOMIAL = ['cumulative_cases']
+EMAIL_IMAGE_PATHS = [os.path.join(PLOTS_DIRECTORY, str(TODAY), 'exponential_forecast_for_cumulative_cases_USA.png'),
+                     os.path.join(PLOTS_DIRECTORY, str(TODAY), 'polynomial_forecast_for_cumulative_cases_USA.png'),
+                     os.path.join(PLOTS_DIRECTORY, str(TODAY), 'time_series_plot_for_daily_percent_change_deaths_USA.png'),
+                     os.path.join(PLOTS_DIRECTORY, str(TODAY), 'time_series_plot_for_daily_percent_change_cases_USA.png')]
 
 
 def make_directories_if_needed():
@@ -354,7 +359,23 @@ def fit_polynomial_regression_and_forecast(df, column, start_date, days_ahead_to
         plt.clf()
 
 
-def main(include_worldwide_analysis=True, clear_data_directory=False, clear_plots_directory=True):
+def send_email_report(image_paths):
+    """
+    Sends an email report with the specified images embedded in the email. The function expects EMAIL_USERNAME,
+    EMAIL_PASSWORD, and EMAIL_RECIPIENT environment variables.
+    :param image_paths: Python list of image paths we want to include in the email
+    """
+    yag = yagmail.SMTP(os.environ['EMAIL_USERNAME'], os.environ['EMAIL_PASSWORD'])
+    recipient = os.environ['EMAIL_RECIPIENT']
+    subject = 'COVID-19 Data Report for ' + str(TODAY)
+    contents = ['<h3> COVID-19 charts with the latest data </h3>']
+    for image in image_paths:
+        inline_image = yagmail.inline(image)
+        contents.append(inline_image)
+    yag.send(to=recipient, subject=subject, contents=contents)
+
+
+def main(include_worldwide_analysis=True, clear_data_directory=False, clear_plots_directory=True, send_email=True):
     """
     Pulls open source COVID-19 data from an EU website, sets up local directories, cleans data, and fits multiple
     simple models with results visualized.
@@ -362,6 +383,7 @@ def main(include_worldwide_analysis=True, clear_data_directory=False, clear_plot
     default is True
     :param clear_data_directory: boolean of whether or not to remove files from the DATA_DIRECTORY; default is False
     :param clear_plots_directory: boolean of whether or not to remove files from the PLOTS_DIRECTORY; default is True
+    :param send_email: boolean of whether or not to email EMAIL_IMAGE_PATHS; default is True
     """
     clear_directories_if_desired(clear_data_directory=clear_data_directory, clear_plots_directory=clear_plots_directory)
     make_directories_if_needed()
@@ -383,6 +405,9 @@ def main(include_worldwide_analysis=True, clear_data_directory=False, clear_plot
         fit_polynomial_regression_and_forecast(df=covid19_df, column=column, start_date=START_DATE,
                                                days_ahead_to_forecast=DAYS_AHEAD_TO_FORECAST,
                                                countries_list=countries_list)
+
+    if send_email:
+        send_email_report(EMAIL_IMAGE_PATHS)
 
 
 if __name__ == "__main__":
