@@ -3,7 +3,8 @@ This repository includes a simple script,
 covid19_analysis.py, to pull COVID-19 data from a verified EU
 website. After ingestion, the script cleans the data, 
 fits simple statistical models, and produces
-visualizations. 
+visualizations. It also provides the option to email the results
+to a specified email account. 
 
 The script can be run in a Python virtual environment:
 <br>
@@ -35,3 +36,8 @@ is more on fitting a line rather than optimizing for
 generalization. 
 * A boolean flag exists to trigger a worldwide analysis
 in addition to a country-specific analysis. 
+* A boolean flag exists to trigger the send of an email with
+a sampling of charts. The following environment variables are 
+needed to send an email report: EMAIL_USERNAME, EMAIL_PASSWORD, 
+and EMAIL_RECIPIENT. The first tw0 are expected to be gmail
+credentials, as the yagmail package is used. 
